@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>VCS Chatbot</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background: #f4f4f4; }
+        .chat-box { max-width: 800px; margin: auto; background: white; padding: 1em; border-radius: 8px; }
+        .message { margin-bottom: 1em; }
+        .user { font-weight: bold; color: #007acc; }
+        .assistant { font-weight: bold; color: #0a0; }
+        .text { margin-left: 1em; }
+        input[type="text"], select { width: 100%; padding: 0.5em; margin: 0.5em 0; }
+        input[type="submit"] { padding: 0.5em 1em; }
+    </style>
+</head>
+<body>
+    <div class="chat-box">
+        <h2>VCS Chatbot med kundedata</h2>
+
+        {% for msg in messages[1:] %}
+            <div class="message">
+                <span class="{{ msg.role }}">{{ msg.role.capitalize() }}:</span>
+                <div class="text">{{ msg.content }}</div>
+            </div>
+        {% endfor %}
+
+        <form method="POST">
+            <label for="client">Kunde (filtrering):</label>
+                <select name="client" required>
+                  <option value="">-- Vælg en kunde --</option>
+                  {% for kunde in kunder %}
+                    <option value="{{ kunde }}" {% if request.form.client == kunde %}selected{% endif %}>{{ kunde }}</option>
+                  {% endfor %}
+                </select>
+
+
+
+
+
+            <label for="message">Dit spørgsmål:</label>
+            <input type="text" name="message" required autofocus>
+
+            <input type="submit" value="Send">
+        </form>
+
+        <p><a href="/reset">Nulstil samtale</a></p>
+    </div>
+</body>
+</html>
