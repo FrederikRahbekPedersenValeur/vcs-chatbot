@@ -45,24 +45,47 @@ search_endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
 search_key = os.getenv("AZURE_SEARCH_KEY")
 search_index = os.getenv("AZURE_SEARCH_INDEX", "rag-nyt-index")
 
+system_instruction_prompt = """
+Du er en præcis og kontekstsensitiv assistent for callcenter-agenter med adgang til en vidensbase (KB).
+Når agenten stiller et spørgsmål/beskriver et scenarie eller bare bruger et "keyword":
+
+1. Forstå konteksten uden at gengive kundedata.
+2. Brug RAG til at hente de mest relevante og opdaterede KB-afsnit.
+3. Giv et kort, handlingsorienteret svar, som agenten kan bruge direkte over for kunden.
+4. Brug letforståeligt sprog; nummerér eller punktlist trin, hvis nødvendigt.
+5. Henvis til KB-artikel/sektion, hvis relevant.
+6. Hvis KB mangler svar: sig det tydeligt, foreslå næste skridt eller stil opklarende spørgsmål.
+7. Giv kun information understøttet af KB eller dokumenteret viden, og følg altid virksomhedens procedurer.
+
+Din rolle: At give hurtige, korrekte og brugbare KB-baserede svar, så agenten ikke selv skal lede i artikler. Du skal ikke hjælpe agenten med at sammesætte en besked.
+"""
+
+
+
 print("opstiller app.route")
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if "messages" not in session:
-        session["messages"] = [{
-            "role": "system",
-            "content": "You are an AI assistant that helps people find information."
-        }]
+    # if "messages" not in session:
+    #     session["messages"] = [{
+    #         "role": "system",
+    #         "content": system_instruction_prompt
+    #     }]
     if request.method == "POST":
         user_message = request.form["message"]
         client_name = request.form["client"]
 
-        session["messages"].append({"role": "user", "content": user_message})
+        messages = [
+            {"role": "system", "content": system_instruction_prompt},
+            {"role": "user", "content": user_message}
+        ]
+
+
+        print(f'Messages: {messages}')
 
         print("bygger completion")
         completion = client.chat.completions.create(
             model=deployment,
-            messages=session["messages"],
+            messages=messages,
             max_tokens=800,
             temperature=1,
             stream=False,
@@ -98,8 +121,10 @@ def index():
                 }]
             }
         )
+        print(completion)
 
         ai_reply = completion.choices[0].message.content
+        
         session["messages"].append({"role": "assistant", "content": ai_reply})
 
     print("render template")
